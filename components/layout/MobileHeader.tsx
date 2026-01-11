@@ -25,7 +25,7 @@ export function MobileHeader() {
 
     return (
         <div className="sticky top-0 z-50 flex h-16 w-full items-center justify-between border-b border-zinc-200 bg-white px-4 md:hidden dark:border-zinc-800 dark:bg-zinc-950">
-            <div className="font-bold text-lg">Ag.</div>
+            <div className="font-bold text-lg">Team</div>
             <button onClick={() => setIsOpen(!isOpen)} className="p-2">
                 <Menu className="h-6 w-6" />
             </button>
