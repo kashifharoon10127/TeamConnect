@@ -25,10 +25,25 @@ export function MobileHeader() {
 
     return (
         <div className="sticky top-0 z-50 flex h-16 w-full items-center justify-between border-b border-zinc-200 bg-white px-4 md:hidden dark:border-zinc-800 dark:bg-zinc-950">
-            <div className="font-bold text-lg">Team</div>
-            <button onClick={() => setIsOpen(!isOpen)} className="p-2">
-                <Menu className="h-6 w-6" />
-            </button>
+            <div className="flex items-center gap-3">
+                <div className="font-bold text-lg">Team</div>
+            </div>
+
+            <div className="flex items-center gap-2">
+                {user ? (
+                    <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold dark:bg-blue-900 dark:text-blue-300 overflow-hidden">
+                        {user.displayName?.charAt(0) || user.email?.charAt(0) || 'G'}
+                    </div>
+                ) : (
+                    <Link href="/login" className="text-sm font-semibold text-blue-600 px-2 py-1">
+                        Sign In
+                    </Link>
+                )}
+
+                <button onClick={() => setIsOpen(!isOpen)} className="p-2">
+                    <Menu className="h-6 w-6" />
+                </button>
+            </div>
 
             {isOpen && (
                 <div className="absolute left-0 top-16 w-full border-b border-zinc-200 bg-white p-4 shadow-lg dark:border-zinc-800 dark:bg-zinc-950">

@@ -5,7 +5,7 @@ export default function Home() {
     return (
         <div className="flex min-h-screen flex-col bg-background text-foreground">
             {/* Navigation Header */}
-            <header className="flex items-center justify-between px-8 py-6 max-w-7xl mx-auto w-full">
+            <header className="hidden md:flex items-center justify-between px-8 py-6 max-w-7xl mx-auto w-full">
                 <div className="flex items-center gap-2">
                     <div className="h-9 w-9 rounded-xl bg-blue-600 shadow-lg shadow-blue-500/20 flex items-center justify-center">
                         <Zap className="h-5 w-5 text-white fill-white" />
