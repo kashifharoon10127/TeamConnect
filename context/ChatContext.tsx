@@ -1,12 +1,16 @@
 'use client';
 
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { db } from '@/lib/firebase';
+import { ref, push, onValue, serverTimestamp, remove } from 'firebase/database';
+import { useAuth } from './AuthContext';
 
 export interface Message {
     id: string;
     senderId: string;
+    senderName?: string;
     text: string;
-    timestamp: Date;
+    timestamp: number;
 }
 
 export interface Contact {
@@ -24,66 +28,89 @@ interface ChatContextType {
     contacts: Contact[];
     messages: Record<string, Message[]>;
     sendMessage: (text: string) => void;
-    currentUser: { id: string; name: string };
+    clearMessages: () => Promise<void>;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
-const INITIAL_CONTACTS: Contact[] = [
-    { id: '1', name: 'Alice Johnson', avatar: 'A', status: 'online', lastMessage: 'Hey, how are you?' },
-    { id: '2', name: 'Bob Smith', avatar: 'B', status: 'offline', lastMessage: 'Can we schedule a call?' },
-    { id: '3', name: 'Charlie Brown', avatar: 'C', status: 'online', lastMessage: 'Project files attached.' },
-];
-
-const INITIAL_MESSAGES: Record<string, Message[]> = {
-    '1': [
-        { id: 'm1', senderId: '1', text: 'Hey, how are you?', timestamp: new Date(Date.now() - 1000 * 60 * 60) },
-    ],
-    '2': [
-        { id: 'm2', senderId: '2', text: 'Can we schedule a call?', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2) },
-    ],
-    '3': [],
-};
+// Contacts will be loaded from Firebase now
 
 export function ChatProvider({ children }: { children: ReactNode }) {
-    const [activeContactId, setActiveContactId] = useState<string | null>('1');
-    const [contacts, setContacts] = useState(INITIAL_CONTACTS);
-    const [messages, setMessages] = useState(INITIAL_MESSAGES);
+    const [activeContactId, setActiveContactId] = useState<string | null>(null);
+    const [contacts, setContacts] = useState<Contact[]>([]);
+    const [messages, setMessages] = useState<Record<string, Message[]>>({});
+    const { user } = useAuth();
 
-    const currentUser = { id: 'me', name: 'You' };
+    // Load all users as contacts
+    useEffect(() => {
+        if (!user) return;
+        const usersRef = ref(db, 'users');
+        const unsubscribe = onValue(usersRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                const loadedContacts: Contact[] = Object.values(data)
+                    .filter((u: any) => u.uid !== user.uid)
+                    .map((u: any) => ({
+                        id: u.uid,
+                        name: u.displayName || u.email?.split('@')[0] || 'Unknown User',
+                        avatar: (u.displayName?.charAt(0) || u.email?.charAt(0) || 'U').toUpperCase(),
+                        status: (Date.now() - u.lastSeen < 300000) ? 'online' : 'offline'
+                    }));
+                setContacts(loadedContacts);
+            }
+        });
+        return () => unsubscribe();
+    }, [user]);
 
-    const sendMessage = (text: string) => {
-        if (!activeContactId) return;
+    useEffect(() => {
+        if (!activeContactId || !user) return;
 
-        const newMessage: Message = {
-            id: Date.now().toString(),
-            senderId: 'me',
+        // Create a unique chat ID based on participants
+        const chatId = [user.uid, activeContactId].sort().join('_');
+        const messagesRef = ref(db, `messages/${chatId}`);
+
+        const unsubscribe = onValue(messagesRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                const loadedMessages = Object.entries(data).map(([key, val]: [string, any]) => ({
+                    id: key,
+                    ...val,
+                }));
+                setMessages(prev => ({
+                    ...prev,
+                    [activeContactId]: loadedMessages
+                }));
+            } else {
+                setMessages(prev => ({ ...prev, [activeContactId]: [] })); // Clear if empty
+            }
+        });
+
+        return () => unsubscribe();
+    }, [activeContactId, user]);
+
+    const sendMessage = async (text: string) => {
+        if (!activeContactId || !user) return;
+
+        const chatId = [user.uid, activeContactId].sort().join('_');
+        const messagesRef = ref(db, `messages/${chatId}`);
+
+        await push(messagesRef, {
+            senderId: user.uid,
+            senderName: user.displayName || user.email?.split('@')[0] || 'Unknown',
             text,
-            timestamp: new Date(),
-        };
+            timestamp: serverTimestamp(),
+        });
+    };
 
-        setMessages(prev => ({
-            ...prev,
-            [activeContactId]: [...(prev[activeContactId] || []), newMessage]
-        }));
-
-        // Simulate reply
-        setTimeout(() => {
-            const reply: Message = {
-                id: (Date.now() + 1).toString(),
-                senderId: activeContactId,
-                text: `This is an automated reply. I'm currently away but I got your message: "${text}"`,
-                timestamp: new Date(),
-            };
-            setMessages(prev => ({
-                ...prev,
-                [activeContactId]: [...(prev[activeContactId] || []), reply]
-            }));
-        }, 2000);
+    const clearMessages = async () => {
+        if (!activeContactId || !user) return;
+        const chatId = [user.uid, activeContactId].sort().join('_');
+        const messagesRef = ref(db, `messages/${chatId}`);
+        await remove(messagesRef);
     };
 
     return (
-        <ChatContext.Provider value={{ activeContactId, setActiveContactId, contacts, messages, sendMessage, currentUser }}>
+        <ChatContext.Provider value={{ activeContactId, setActiveContactId, contacts, messages, sendMessage, clearMessages }}>
             {children}
         </ChatContext.Provider>
     );

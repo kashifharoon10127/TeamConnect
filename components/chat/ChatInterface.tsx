@@ -1,19 +1,26 @@
 'use client';
 
 import { useChat } from '@/context/ChatContext';
+import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
-import { Search, Send, Phone, MoreVertical, Paperclip, Smile } from 'lucide-react';
-import { useState, useRef, useEffect } from 'react';
+import { Search, Send, Phone, MoreVertical, Paperclip, Smile, Trash2, Sun, Moon, ArrowLeft } from 'lucide-react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { format } from 'date-fns';
 import Link from 'next/link';
+import { useTheme } from 'next-themes';
 
 export function ChatInterface() {
-    const { contacts, activeContactId, setActiveContactId, messages, sendMessage, currentUser } = useChat();
+    const { contacts, activeContactId, setActiveContactId, messages, sendMessage, clearMessages } = useChat();
+    const { user: currentUser } = useAuth();
+    const { theme, setTheme } = useTheme();
     const [input, setInput] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     const activeContact = contacts.find(c => c.id === activeContactId);
-    const activeMessages = activeContactId ? (messages[activeContactId] || []) : [];
+    const activeMessages = useMemo(() =>
+        activeContactId ? (messages[activeContactId] || []) : [],
+        [activeContactId, messages]
+    );
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -34,14 +41,23 @@ export function ChatInterface() {
     };
 
     return (
-        <div className="flex h-[calc(100vh-4rem)] overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950 m-4">
+        <div className="flex h-[calc(100vh-4rem)] overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40 backdrop-blur-sm m-2 md:m-4">
             {/* Sidebar List */}
-            <div className="w-80 border-r border-zinc-200 flex flex-col bg-zinc-50/50 dark:border-zinc-800 dark:bg-zinc-900/50">
-                <div className="p-4 border-b border-zinc-200 dark:border-zinc-800">
-                    <div className="relative">
+            <div className={cn(
+                "w-full md:w-80 border-r border-zinc-200 flex flex-col bg-zinc-50/50 dark:border-zinc-800 dark:bg-zinc-900/50",
+                activeContactId ? "hidden md:flex" : "flex"
+            )}>
+                <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex items-center gap-2">
+                    <div className="relative flex-1">
                         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
                         <input type="text" placeholder="Search chats" className="w-full rounded-lg bg-white border border-zinc-200 py-2 pl-9 pr-4 text-sm outline-none focus:ring-2 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-800" />
                     </div>
+                    <button
+                        onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                        className="rounded-lg p-2 hover:bg-zinc-200 dark:hover:bg-zinc-800"
+                    >
+                        {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+                    </button>
                 </div>
                 <div className="flex-1 overflow-y-auto">
                     {contacts.map(contact => (
@@ -69,17 +85,26 @@ export function ChatInterface() {
             </div>
 
             {/* Chat Area */}
-            <div className="flex-1 flex flex-col bg-white dark:bg-zinc-950">
+            <div className={cn(
+                "flex-1 flex flex-col bg-white dark:bg-zinc-950/50",
+                !activeContactId ? "hidden md:flex" : "flex"
+            )}>
                 {activeContact ? (
                     <>
                         {/* Header */}
                         <div className="flex items-center justify-between border-b border-zinc-200 p-4 dark:border-zinc-800">
-                            <div className="flex items-center gap-3">
-                                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-blue-600 font-bold dark:bg-zinc-700 dark:text-zinc-300">
+                            <div className="flex items-center gap-3 overflow-hidden">
+                                <button
+                                    onClick={() => setActiveContactId(null)}
+                                    className="md:hidden p-1 -ml-1 text-zinc-500 hover:text-blue-600"
+                                >
+                                    <ArrowLeft className="h-6 w-6" />
+                                </button>
+                                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-600 font-bold dark:bg-zinc-700 dark:text-zinc-300">
                                     {activeContact.avatar}
                                 </div>
-                                <div>
-                                    <h2 className="font-semibold text-zinc-900 dark:text-zinc-50">{activeContact.name}</h2>
+                                <div className="overflow-hidden">
+                                    <h2 className="font-semibold text-zinc-900 dark:text-zinc-50 truncate">{activeContact.name}</h2>
                                     <span className="flex items-center gap-1 text-xs text-green-600">
                                         {activeContact.status === 'online' ? <span className="h-1.5 w-1.5 rounded-full bg-green-500" /> : <span className="h-1.5 w-1.5 rounded-full bg-gray-400" />}
                                         {activeContact.status === 'online' ? 'Online' : 'Offline'}
@@ -87,6 +112,13 @@ export function ChatInterface() {
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">
+                                <button
+                                    onClick={clearMessages}
+                                    className="rounded-full p-2 text-zinc-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
+                                    title="Clear Chat History"
+                                >
+                                    <Trash2 className="h-5 w-5" />
+                                </button>
                                 <Link href="/call">
                                     <button className="rounded-full p-2 text-zinc-500 hover:bg-zinc-100 hover:text-blue-600 dark:hover:bg-zinc-800">
                                         <Phone className="h-5 w-5" />
@@ -101,14 +133,14 @@ export function ChatInterface() {
                         {/* Messages */}
                         <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-zinc-50/30 dark:bg-zinc-900/20">
                             {activeMessages.map((msg) => {
-                                const isMe = msg.senderId === 'me';
+                                const isMe = currentUser ? msg.senderId === currentUser.uid : false;
                                 return (
                                     <div key={msg.id} className={cn("flex", isMe ? "justify-end" : "justify-start")}>
                                         <div className={cn(
                                             "max-w-[70%] rounded-2xl px-4 py-2 shadow-sm",
                                             isMe
-                                                ? "bg-blue-600 text-white rounded-tr-none"
-                                                : "bg-white text-zinc-900 rounded-tl-none border border-zinc-200 dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-50"
+                                                ? "bg-blue-600 text-white rounded-tr-none shadow-md shadow-blue-500/20"
+                                                : "bg-white text-zinc-900 rounded-tl-none border border-zinc-200 dark:bg-zinc-900 dark:border-zinc-800 dark:text-zinc-50"
                                         )}>
                                             <p className="text-sm">{msg.text}</p>
                                             <p className={cn("mt-1 text-[10px]", isMe ? "text-blue-100" : "text-zinc-400")}>

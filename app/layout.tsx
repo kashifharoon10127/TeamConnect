@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { MobileHeader } from "@/components/layout/MobileHeader";
+import { Providers } from "@/components/Providers";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Antigravity Next.js App",
+  title: "TeamConnect Next.js App",
   description: "Dashboard, Chat, and Call Demo",
 };
 
@@ -25,19 +26,21 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-50`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground transition-colors duration-300`}
       >
-        <div className="flex min-h-screen flex-col md:flex-row">
-          <Sidebar />
-          <div className="flex-1 flex flex-col md:pl-64">
-            <MobileHeader />
-            <main className="flex-1">
-              {children}
-            </main>
+        <Providers>
+          <div className="flex min-h-screen flex-col md:flex-row">
+            <Sidebar />
+            <div className="flex-1 flex flex-col md:pl-64">
+              <MobileHeader />
+              <main className="flex-1">
+                {children}
+              </main>
+            </div>
           </div>
-        </div>
+        </Providers>
       </body>
     </html>
   );

@@ -1,36 +1,67 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# TeamConnect
 
-## Getting Started
+TeamConnect is a professional, high-performance communication and operational intelligence platform built with the latest web technologies. It features real-time chat, a comprehensive analytics dashboard, and seamless authentication.
 
-First, run the development server:
+## 🚀 Teck Stack
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- **Framework**: [Next.js 15](https://nextjs.org/) (App Router)
+- **Library**: [React 19](https://react.dev/)
+- **Styling**: [Tailwind CSS v4](https://tailwindcss.com/) (Class-based Dark Mode)
+- **State Management**: [Redux Toolkit](https://redux-toolkit.js.org/) & [RTK Query](https://redux-toolkit.js.org/rtk-query/overview)
+- **Backend Service**: [Firebase](https://firebase.google.com/) (Authentication & Realtime Database)
+- **Icons**: [Lucide React](https://lucide.dev/)
+- **Persistence**: [Redux Persist](https://github.com/rt2zz/redux-persist)
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## ✨ Key Features
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **Real-time Private Messaging**: Instant, secure communication between registered users using Firebase Realtime Database.
+- **Operational Dashboard**: A centralized view of system analytics, user activities, and live metrics.
+- **Dynamic User Discovery**: Automatic synchronization of registered users into the chat contact list.
+- **Responsive & Premium UI**: A mobile-first, high-conversion design with professional typography and smooth transitions.
+- **Advanced Dark Mode**: Fully integrated theme system that respects system preferences and persists user choices.
+- **Optimized Data Fetching**: Utilizes RTK Query for efficient client-side caching and synchronization.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🏗️ Architectural Decisions
 
-## Learn More
+### Why Next.js App Router (No `getServerSideProps`)?
+TeamConnect utilizes the latest **Next.js 15 App Router** architecture. 
+- **Server Components**: We no longer use `getServerSideProps` as data fetching is handled directly within Server Components. This reduces client-side JavaScript and improves performance.
+- **Streaming**: Supports Suspense-based streaming for dashboard components, providing a faster initial page load.
 
-To learn more about Next.js, take a look at the following resources:
+### Why Firebase instead of Socket.io?
+We selected **Firebase Realtime Database** for our messaging engine for several key reasons:
+- **Serverless Architecture**: Unlike Socket.io, which requires a dedicated, always-on Node.js server to manage WebSockets, Firebase is completely serverless.
+- **Real-time Sync**: Firebase provides industry-standard mobile/web synchronization out of the box, handling offline states and reconnection automatically.
+- **Scalability**: Firebase scales effortlessly without the need for manual load balancing or Redis adapters required by Socket.io in production.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 📂 Project Structure
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `/app`: Contains the main application routes (Dashboard, Chat, Call, Login/Signup) using the App Router.
+- `/components`:
+    - `/layout`: Global navigation elements (Sidebar, MobileHeader).
+    - `/chat`: Real-time messaging interface.
+    - `/dashboard`: Analytics cards, tables, and sync indicators.
+- `/context`: React Context providers for Authentication and Chat state.
+- `/store`: Redux Toolkit store configuration, slices, and RTK Query API definitions.
+- `/services`: Centralized API service layers for data fetching.
+- `/lib`: Helper utilities and Firebase configuration.
 
-## Deploy on Vercel
+## 🛠️ Getting Started
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. **Clone the repository**
+2. **Install dependencies**:
+   ```bash
+   npm install
+   ```
+3. **Run the development server**:
+   ```bash
+   npm run dev
+   ```
+4. **Build for production**:
+   ```bash
+   npm run build
+   ```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 📄 License
+
+This project is private and intended for internal use.
